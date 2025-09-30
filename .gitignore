@@ -2,3 +2,6 @@
 **/.nextflow/
 **/.nextflow.log*
 **/gsea/
+**/metadata/
+**/pipeline_info/
+*fastq*
