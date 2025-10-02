@@ -4,13 +4,107 @@ params.zip = 'zip'
 
 process SAYHELLO {
     debug true
+    script:
+    """
+    echo 'Hello World!'
+    """
 }
 
+process SAYHELLO_PYTHON {
+    debug true
+    script:
+    """
+    python -c "print('Hello World!')"
+    """
+}
+
+process SAYHELLO_PARAM {
+    debug true
+    input:
+    val msg
+    script:
+    """
+    echo $msg
+    """
+}
+
+process SAYHELLO_FILE {
+    debug true
+    input:
+    val msg
+    output:
+    file('hello.txt') 
+
+    publishDir 'results', mode: 'copy'
+
+    script:
+    """
+    echo $msg > hello.txt
+    """
+}
+
+process UPPERCASE {
+    debug true
+    input:
+    val msg
+    output:
+    file('uppercase.txt')
+
+    publishDir 'results', mode: 'copy'
+
+    script:
+    """
+    echo $msg | tr a-z A-Z > uppercase.txt
+    find . -name uppercase.txt
+    """
+}
+
+process PRINTUPPER {
+    debug true
+    input:
+    file upper_txt
+    script:
+    """
+    echo "Content of the file:"
+    cat ${upper_txt}
+    """
+}
+
+process ZIPUPPER {
+    debug true
+    input:
+    file upper_txt
+    output:
+    file('*')
+
+    publishDir 'results', mode: 'copy'
+
+    script:
+    """
+    case '${params.zip}' in
+        zip)
+            zip uppercase.txt.zip ${upper_txt}
+            ;;
+        gzip)
+            gzip -c ${upper_txt} > uppercase.txt.gz
+            ;;
+        bzip2)
+            bzip2 -c ${upper_txt} > uppercase.txt.bz2
+            ;;
+        *)
+            echo "Unknown compression format: ${params.zip}" >&2
+            exit 1
+            ;;
+    esac
+    """
+
+}
 
 
 workflow {
 
-    // Task 1 - create a process that says Hello World! (add debug true to the process right after initializing to be sable to print the output to the console)
+    // Task 1 - create a process that says Hello World! (add debug true to the process right after initializing to be
+    // sable to print the output to the console)
     if (params.step == 1) {
         SAYHELLO()
     }
@@ -51,6 +145,8 @@ workflow {
     //          Print out the path to the zipped file in the console
     if (params.step == 7) {
         greeting_ch = Channel.of("Hello world!")
+        out_ch = UPPERCASE(greeting_ch)
+        ZIPUPPER(out_ch)
     }
 
     // Task 8 - Create a process that zips the file created in the UPPERCASE process in "zip", "gzip" AND "bzip2" format. Print out the paths to the zipped files in the console

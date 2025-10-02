@@ -6,7 +6,7 @@ workflow{
     // Task 1 - Extract the first item from the channel
 
     if (params.step == 1) {
-        in_ch = channel.of(1,2,3)
+        in_ch = channel.of(1,2,3).first().view()
 
     }
 
@@ -14,7 +14,7 @@ workflow{
     
     if (params.step == 2) {
 
-        in_ch = channel.of(1,2,3)
+        in_ch = channel.of(1,2,3).last().view()
 
     }
 
@@ -22,7 +22,7 @@ workflow{
 
     if (params.step == 3) {
 
-        in_ch = channel.of(1,2,3)
+        in_ch = channel.of(1,2,3).take(2).view()
 
 
     }
@@ -31,7 +31,7 @@ workflow{
     
     if (params.step == 4) {
 
-        in_ch = channel.of(2,3,4)
+        in_ch = channel.of(2,3,4).map{it*it}.view()
 
 
     }
@@ -49,7 +49,7 @@ workflow{
 
     if (params.step == 6) {
         
-        in_ch = channel.of('Taylor', 'Swift')
+        in_ch = channel.of('Taylor', 'Swift').toList().map{it.reverse()}.flatten().view()
 
     }
 
@@ -57,9 +57,11 @@ workflow{
 
     if (params.step == 7) {
 
-        in_ch = channel.fromPath('files_dir/*.fq')
-
-        
+        in_ch = channel.fromPath('files_dir/*.fq').map{ file ->
+        def f = file.toFile()       
+        def name = f.getName()      
+        def dir  = f.getParent()    
+        tuple(name, dir)}.view()
     }
 
     // Task 8 - Combine the items from the two channels into a single channel
@@ -68,8 +70,7 @@ workflow{
 
         ch_1 = channel.of(1,2,3)
         ch_2 = channel.of(4,5,6)
-        out_ch = channel.of("a", "b", "c")
-
+        ch_1.concat(ch_2).view()
 
     }
 
@@ -77,7 +78,7 @@ workflow{
 
     if (params.step == 9) {
 
-        in_ch = channel.of([1,2,3], [4,5,6])
+        in_ch = channel.of([1,2,3], [4,5,6]).flatten().view()
 
 
     }
@@ -86,20 +87,21 @@ workflow{
 
     if (params.step == 10) {
 
-        in_ch = channel.of(1,2,3)
+        in_ch = channel.of(1,2,3).toList().view()
 
     }
     
 
 
-    // Task 11 -  From the input channel, create lists where each first item in the list of lists is the first item in the output channel, followed by a list of all the items its paired with
+    // Task 11 -  From the input channel, create lists where each first item in the list of lists is the first item in the output channel,
+    // followed by a list of all the items its paired with
     // e.g. 
     // in: [[1, 'A'], [1, 'B'], [1, 'C'], [2, 'D'], [2, 'E'], [3, 'F']]
     // out: [[1, ['A', 'B', 'C']], [2, ['D', 'E']], [3, ['F']]]
 
     if (params.step == 11) {
 
-        in_ch = channel.of([1, 'V'], [3, 'M'], [2, 'O'], [1, 'f'], [3, 'G'], [1, 'B'], [2, 'L'], [2, 'E'], [3, '33'])
+        in_ch = channel.of([1, 'V'], [3, 'M'], [2, 'O'], [1, 'f'], [3, 'G'], [1, 'B'], [2, 'L'], [2, 'E'], [3, '33']).groupTuple().view()
 
     }
 
@@ -109,6 +111,7 @@ workflow{
 
         left_ch = channel.of([1, 'V'], [3, 'M'], [2, 'O'], [1, 'B'], [3, '33'])
         right_ch = channel.of([1, 'f'], [3, 'G'], [2, 'L'], [2, 'E'],)
+        left_ch.join(right_ch).view()
 
     }
 
@@ -117,12 +120,24 @@ workflow{
 
     if (params.step == 13) {
 
-        in_ch = channel.of(1,2,3,4,5,6,7,8,9,10)
+        in_ch = channel.of(1,2,3,4,5,6,7,8,9,10).branch{
+            even: it % 2 == 0
+            odd: it % 2 != 0
+        }
+        in_ch.even.toList().subscribe { list ->
+            println "Even numbers: $list"
+        }
+
+        in_ch.odd.toList().subscribe { list ->
+            println "Odd numbers: $list"
+        }
+
 
     }
 
-    // Task 14 - Nextflow has the concept of maps. Write the names in the maps in this channel to a file called "names.txt". Each name should be on a new line. 
-    //           Store the file in the "results" directory under the name "names.txt"
+    // Task 14 - Nextflow has the concept of maps. Write the names in the maps in this channel to a file called "names.txt".
+    // Each name should be on a new line. 
+    // Store the file in the "results" directory under the name "names.txt"
 
     if (params.step == 14) {
 
@@ -135,6 +150,8 @@ workflow{
             ['name': 'Hagrid', 'title': 'groundkeeper'],
             ['name': 'Dobby', 'title': 'hero'],
         )
+
+        in_ch.map{it.name}.collectFile(name: "./results/names.txt", newLine: true)
     
     }
 
