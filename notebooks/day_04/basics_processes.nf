@@ -100,6 +100,42 @@ process ZIPUPPER {
 
 }
 
+process ZIPALLUPPER {
+    debug true
+    input:
+    file upper_txt
+    output:
+    file('*')
+
+    publishDir 'results', mode: 'copy'
+
+    script:
+    """
+    zip uppercase.txt.zip ${upper_txt}
+    gzip -c ${upper_txt} > uppercase.txt.gz
+    bzip2 -c ${upper_txt} > uppercase.txt.bz2
+    """
+
+}
+
+process WRITETOFILE {
+    debug true
+    input: 
+    val list
+    output:
+    file('*')
+
+    publishDir 'results', mode: 'copy'
+
+    script:
+    def line = list.name + "\t" + list.title
+
+    """
+    printf ""
+    echo -e "$line" >> names.tsv
+    """
+}
+
 
 workflow {
 
@@ -153,6 +189,8 @@ workflow {
 
     if (params.step == 8) {
         greeting_ch = Channel.of("Hello world!")
+        out_ch = UPPERCASE(greeting_ch)
+        ZIPALLUPPER(out_ch)
     }
 
     // Task 9 - Create a process that reads in a list of names and titles from a channel and writes them to a file.
@@ -168,10 +206,7 @@ workflow {
             ['name': 'Hagrid', 'title': 'groundkeeper'],
             ['name': 'Dobby', 'title': 'hero'],
         )
-
-        in_ch
-            | WRITETOFILE
-            // continue here
+        WRITETOFILE(in_ch)
     }
 
 }
