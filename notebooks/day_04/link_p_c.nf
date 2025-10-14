@@ -23,9 +23,6 @@ process SPLITLETTERS {
     """
 } 
 
-//process CONVERTTOUPPER {  
-//} 
-
 workflow { 
     // 1. Read in the samplesheet (samplesheet_2.csv)  into a channel. The block_size will be the meta-map
     // 2. Create a process that splits the "in_str" into sizes with size block_size. The output will be a file for each block, named with the prefix as seen in the samplesheet_2

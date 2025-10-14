@@ -123,16 +123,15 @@ process WRITETOFILE {
     input: 
     val list
     output:
-    file('*')
+    path "names.tsv"
 
     publishDir 'results', mode: 'copy'
 
     script:
-    def line = list.name + "\t" + list.title
+    def lines = list.collect { "${it.name}\t${it.title}" }.join('\n')
 
     """
-    printf ""
-    echo -e "$line" >> names.tsv
+    echo "${lines}" > names.tsv
     """
 }
 
@@ -206,7 +205,8 @@ workflow {
             ['name': 'Hagrid', 'title': 'groundkeeper'],
             ['name': 'Dobby', 'title': 'hero'],
         )
-        WRITETOFILE(in_ch)
+        ch_collected = in_ch.collect()
+        WRITETOFILE(ch_collected)
     }
 
 }
